@@ -151,6 +151,12 @@ def log_grads(model, tb_writer, tb_index):
     tb_writer.add_scalar('grad/feature', feature_norm, tb_index)
     tb_writer.add_scalar('grad/rpn', rpn_norm, tb_index)
 
+def updateBN(model, current_epoch=0):
+    if current_epoch >= cfg.BACKBONE.TRAIN_EPOCH:
+        for layer in cfg.BACKBONE.TRAIN_LAYERS:
+            for m in getattr(model.backbone, layer).modules():
+                if isinstance(m, nn.BatchNorm2d):
+                    m.weight.grad.data.add_(0.00001*torch.sign(m.weight.data))  # L1
 
 def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
     cur_lr = lr_scheduler.get_cur_lr()
@@ -214,6 +220,7 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
         if is_valid_number(loss.data.item()):
             optimizer.zero_grad()
             loss.backward()
+            # updateBN(model.module, epoch)
             reduce_gradients(model)
 
             if rank == 0 and cfg.TRAIN.LOG_GRADS:
