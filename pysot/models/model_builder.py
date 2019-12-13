@@ -16,11 +16,12 @@ from pysot.models.neck import get_neck
 
 
 class ModelBuilder(nn.Module):
-    def __init__(self):
+    def __init__(self, channel_dict):
         super(ModelBuilder, self).__init__()
 
         # build backbone
         self.backbone = get_backbone(cfg.BACKBONE.TYPE,
+                                     channel_dict
                                      **cfg.BACKBONE.KWARGS)
 
         # build adjust layer

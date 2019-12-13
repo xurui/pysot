@@ -19,5 +19,6 @@ BACKBONES = {
             }
 
 
-def get_backbone(name, **kwargs):
-    return BACKBONES[name](**kwargs)
+def get_backbone(name, channel_dict, **kwargs):
+    # return BACKBONES[name](**kwargs)
+    return mobilenetv2(channel_dict, **kwargs)

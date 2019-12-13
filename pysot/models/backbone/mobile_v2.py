@@ -24,7 +24,7 @@ def conv_1x1_bn(inp, oup):
 
 
 class InvertedResidual(nn.Module):
-    def __init__(self, inp, oup, stride, expand_ratio, dilation=1):
+    def __init__(self, inp, oup, stride, channel_num, dilation=1):
         super(InvertedResidual, self).__init__()
         self.stride = stride
 
@@ -36,17 +36,17 @@ class InvertedResidual(nn.Module):
 
         self.conv = nn.Sequential(
             # pw
-            nn.Conv2d(inp, inp * expand_ratio, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(inp * expand_ratio),
+            nn.Conv2d(inp, channel_num, 1, 1, 0, bias=False),
+            nn.BatchNorm2d(channel_num),
             nn.ReLU6(inplace=True),
             # dw
-            nn.Conv2d(inp * expand_ratio, inp * expand_ratio, 3,
+            nn.Conv2d(channel_num, channel_num, 3,
                       stride, padding, dilation=dilation,
-                      groups=inp * expand_ratio, bias=False),
-            nn.BatchNorm2d(inp * expand_ratio),
+                      groups=channel_num, bias=False),
+            nn.BatchNorm2d(channel_num),
             nn.ReLU6(inplace=True),
             # pw-linear
-            nn.Conv2d(inp * expand_ratio, oup, 1, 1, 0, bias=False),
+            nn.Conv2d(channel_num, oup, 1, 1, 0, bias=False),
             nn.BatchNorm2d(oup),
         )
 
@@ -58,7 +58,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Sequential):
-    def __init__(self, width_mult=1.0, used_layers=[3, 5, 7]):
+    def __init__(self, channel_dict, width_mult=1.0, used_layers=[3, 5, 7]):
         super(MobileNetV2, self).__init__()
 
         self.interverted_residual_setting = [
@@ -109,9 +109,13 @@ class MobileNetV2(nn.Sequential):
                         dd = d
                     else:
                         dd = max(d // 2, 1)
+                    layer_name = str(idx) + '.' + str(i)
+                    channel_num = channel_dict[layer_name]
                     layers.append(InvertedResidual(input_channel,
                                                    output_channel, s, t, dd))
                 else:
+                    layer_name = str(idx) + '.' + str(i)
+                    channel_num = channel_dict[layer_name]
                     layers.append(InvertedResidual(input_channel,
                                                    output_channel, 1, t, d))
                 input_channel = output_channel
@@ -133,13 +137,22 @@ class MobileNetV2(nn.Sequential):
         return out
 
 
-def mobilenetv2(**kwargs):
-    model = MobileNetV2(**kwargs)
+def mobilenetv2(channel_dict, **kwargs):
+    model = MobileNetV2(channel_dict, **kwargs)
     return model
 
 
 if __name__ == '__main__':
-    net = mobilenetv2()
+
+    the_model = torch.load("/home/insta360/workspace/prune_mobilenetv2/checkpoints/pruned_model.pth")
+    split_name_list = []
+    channel_num_list = []
+    for name, module in the_model.items():
+        if (name[-13:] == 'conv.0.weight'):
+            split_name_list.append(name[:-14].split('backbone.layer')[-1])
+            channel_num_list.append(module.shape[0])
+    pruned_channels_dict = dict(zip(split_name_list, channel_num_list))
+    net = mobilenetv2(pruned_channels_dict)
 
     print(net)
 

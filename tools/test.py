@@ -44,7 +44,15 @@ def main():
     dataset_root = os.path.join(cur_dir, '../testing_dataset', args.dataset)
 
     # create model
-    model = ModelBuilder()
+    the_model = torch.load("/home/jerry/workspace/pysot/pruned_model.pth")
+    split_name_list = []
+    channel_num_list = []
+    for name, module in the_model.items():
+        if (name[-13:] == 'conv.0.weight'):
+            split_name_list.append(name[:-14].split('backbone.layer')[-1])
+            channel_num_list.append(module.shape[0])
+    pruned_channels_dict = dict(zip(split_name_list, channel_num_list))
+    model = ModelBuilder(pruned_channels_dict)
 
     # load model
     model = load_pretrain(model, args.snapshot).cuda().eval()

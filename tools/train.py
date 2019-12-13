@@ -279,8 +279,17 @@ def main():
         logger.info("Version Information: \n{}\n".format(commit()))
         logger.info("config \n{}".format(json.dumps(cfg, indent=4)))
 
+    the_model = torch.load("/home/jerry/workspace/pysot/pruned_model.pth")
+    split_name_list = []
+    channel_num_list = []
+    for name, module in the_model.items():
+        if (name[-13:] == 'conv.0.weight'):
+            split_name_list.append(name[:-14].split('backbone.layer')[-1])
+            channel_num_list.append(module.shape[0])
+    pruned_channels_dict = dict(zip(split_name_list, channel_num_list))
+
     # create model
-    model = ModelBuilder().cuda().train()
+    model = ModelBuilder(pruned_channels_dict).cuda().train()
     dist_model = DistModule(model)
 
     # load pretrained backbone weights
