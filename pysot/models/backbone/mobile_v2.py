@@ -112,12 +112,12 @@ class MobileNetV2(nn.Sequential):
                     layer_name = str(idx) + '.' + str(i)
                     channel_num = channel_dict[layer_name]
                     layers.append(InvertedResidual(input_channel,
-                                                   output_channel, s, t, dd))
+                                                   output_channel, s, channel_num, dd))
                 else:
                     layer_name = str(idx) + '.' + str(i)
                     channel_num = channel_dict[layer_name]
                     layers.append(InvertedResidual(input_channel,
-                                                   output_channel, 1, t, d))
+                                                   output_channel, 1, channel_num, d))
                 input_channel = output_channel
 
             last_dilation = d
