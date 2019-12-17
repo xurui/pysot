@@ -21,7 +21,7 @@ class ModelBuilder(nn.Module):
 
         # build backbone
         self.backbone = get_backbone(cfg.BACKBONE.TYPE,
-                                     channel_dict
+                                     channel_dict,
                                      **cfg.BACKBONE.KWARGS)
 
         # build adjust layer

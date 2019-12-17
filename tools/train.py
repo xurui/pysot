@@ -279,7 +279,9 @@ def main():
         logger.info("Version Information: \n{}\n".format(commit()))
         logger.info("config \n{}".format(json.dumps(cfg, indent=4)))
 
-    the_model = torch.load("/home/jerry/workspace/pysot/pruned_model.pth")
+    device = torch.cuda.current_device()
+    the_model = torch.load("/home/jerry/workspace/pysot/pretrained_models/pruned_model.pth",
+        map_location=lambda storage, loc: storage.cuda(device))
     split_name_list = []
     channel_num_list = []
     for name, module in the_model.items():
